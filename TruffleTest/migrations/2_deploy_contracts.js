@@ -11,8 +11,7 @@ module.exports = function(deployer) {
   deployer.link(ConvertLib, EIP20);
   deployer.deploy(UET20);
   // initialAmount, string _tokenName, uint8 _decimalUnits, string _tokenSymbol
-  deployer.deploy(EIP20,10000,"test",1,"kekw");
-  deployer.deploy(FuturXe,test,"test",1,"kekw");
+  deployer.deploy(EIP20,10000,"test",1,"token");
   deployer.deploy(BatchOverflow);
 
 };

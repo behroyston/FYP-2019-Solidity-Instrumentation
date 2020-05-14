@@ -7,6 +7,7 @@ namespace Sif {
 // counter to prevent duplicate instructions
 int count = 0;
 int count1 = 0;
+int count2 = 0;
 
 // var names
 string TOTALHOLDERS = "_totalHolders";
@@ -106,18 +107,28 @@ void visit(ASTNode* node) {
 
     if (node->get_node_type() == NodeTypeFunctionDefinition)
     {
-        if (count1 == 0)
-            count1++;
-        else
-            return;
 
         FunctionDefinitionNode* fd = (FunctionDefinitionNode*)(node);
 
         std::string name = fd->get_name();
+                    cout << "Function called: " << name <<  "\n"; 
 
-        if (name == ("batchTransfer")) 
+        if (name.compare("transfer") == 0) 
         {
-            instrumentBatchTransferFunction(fd);
+            if (count1 == 0)
+                count1++;
+            else
+                return;
+            instrumentTransferFunction(fd);
+        }
+
+        if (name.compare("EIP20") == 0)
+        { 
+            if (count2 == 0)
+                count2++;
+            else
+                return;
+            addInitialVariablesToConstructor(fd);
         }
     }
 }
@@ -151,7 +162,7 @@ void createAddOwner(ContractDefinitionNode* testNode) {
         BlockNodePtr pBlockPtr = (BlockNodePtr) b;
         fd->set_function_body(pBlockPtr);
         fd->set_returns(pReturnNodePtr);
-        fd->set_params(pNodePtr
+        fd->set_params(pNodePtr);
 
         // checkExist[_to] == 1
         IndexAccessNode* iNode = new IndexAccessNode();
@@ -409,73 +420,82 @@ void createCheckTotalAmount(ContractDefinitionNode* testNode){
 
 }
 
-void instrumentBatchTransferFunction(FunctionDefinitionNode* fd)
+void instrumentTransferFunction(FunctionDefinitionNode* fd) 
 {
     BlockNodePtr blockNode = fd->get_function_body();
-    vector<ASTNodePtr> v1;
 
-    ASTNodePtr forLoopNode;
+    vector<ASTNodePtr> v1;
 
     //Statement s;
 
     for (int i = 0; i < blockNode->num_statements(); i++) {
         
-        ASTNodePtr stmt = (ASTNodePtr)blockNode->get_statement(i);
-        v1.push_back(stmt);
-
-        if (stmt.get_node_type() == NodeTypeForStatement) {
-            forLoopNode = stmt;
-        }
+        v1.push_back((ASTNodePtr)blockNode->get_statement(i));
     }
 
-    // checkTotalAmount() in the first line of the code
-    LiteralNode* lNode1 = new LiteralNode(checkTotal);
-    string checkTotal = "checkTotalAmount";
-    ExpressionStatementNode* e1 = new ExpressionStatementNode();
-    FunctionCallNode* f1 = new FunctionCallNode((ASTNodePtr)(lNode1));
-    e1->set_expression((ASTNodePtr)(f1));
+    // assembly {
+    //      gasstop()
+    // }
+    InlineAssemblyNode* inLineStatement1 = new InlineAssemblyNode();
 
-    // adding our own custom instruction into the for block loop
-    vector<ASTNodePtr> v2;
-
-    ForStatementNodePtr forStatement = (ForStatementNodePtr)(forLoopNode);
-    BlockNodePtr b2 = (BlockNodePtr)(forStatement->get_body());
-    for (int i = 0; i < b2->num_statements(); i++) {
-        ASTNodePtr stmt = (ASTNodePtr)(b2->get_statement(i));
-        v2.push_back(stmt);
-    }
+    string source1 = "assembly {\n\t\tgasstop()\n\t}";
+    inLineStatement1->set_source(source1);
 
     // addOwner(_to)
-    LiteralNode* lNode2 = new LiteralNode(ADDOWNER);
-    string receivers = "_receivers[i]"
-    LiteralNode* lNode3 = new LiteralNode(receivers);
+    LiteralNode* lNode = new LiteralNode(ADDOWNER);
+    LiteralNode* lNode1 = new LiteralNode(TO);
 
+    ExpressionStatementNode* e1 = new ExpressionStatementNode();
+    FunctionCallNode* f1 = new FunctionCallNode((ASTNodePtr)(lNode));
+    f1->add_argument((ASTNodePtr)(lNode1));
+
+    e1->set_expression((ASTNodePtr)(f1));
+
+    // checkTotalAmount()
+    string checkTotal = "checkTotalAmount";
+    LiteralNode* lNode2 = new LiteralNode(checkTotal);
     ExpressionStatementNode* e2 = new ExpressionStatementNode();
+
     FunctionCallNode* f2 = new FunctionCallNode((ASTNodePtr)(lNode2));
-    f2->add_argument((ASTNodePtr)(lNode3));
+
     e2->set_expression((ASTNodePtr)(f2));
 
-    v2.insert(v2.begin(),(ASTNodePtr)(e2));
+    // assembly {
+    //      gasstart()
+    // }
+    InlineAssemblyNode* inLineStatement2 = new InlineAssemblyNode();
 
-    BlockNode* newB1 = new BlockNode();
+    string source2 = "assembly {\n\t\tgasstart()\n\t}";
+    inLineStatement2->set_source(source2);
 
-    for (int i = 0; i < v1.size(); i++) {
-        newB1->add_statement(v2.at(i));
-    }
+    v1.insert(v1.begin(),(ASTNodePtr)(inLineStatement1));
+    v1.insert(v1.begin()+1,(ASTNodePtr)e1);
+    v1.insert(v1.begin()+2,(ASTNodePtr)(e2));
+    v1.insert(v1.begin()+3,(ASTNodePtr)(inLineStatement2));
 
-    forStatement->set_body((ASTNodePtr)(newB1));
+    // assembly {
+    //      gasstop()
+    // }
+    InlineAssemblyNode* inLineStatement3 = new InlineAssemblyNode();
+    inLineStatement3->set_source(source1);
 
-    // checkTotalAmount() at the end
-    LiteralNode* lNode4 = new LiteralNode(checkTotal);
-    ExpressionStatementNode* e3= new ExpressionStatementNode();
-    FunctionCallNode* f3 = new FunctionCallNode((ASTNodePtr)(lNode4));
+    // checkTotalAmount()
+    LiteralNode* lNode3 = new LiteralNode(checkTotal);
+
+    ExpressionStatementNode* e3 = new ExpressionStatementNode();
+    FunctionCallNode* f3 = new FunctionCallNode((ASTNodePtr)(lNode3));
+
+    // assembly {
+    //      gasstart()
+    // }
+    InlineAssemblyNode* inLineStatement4 = new InlineAssemblyNode();
+    inLineStatement4->set_source(source2);
+
     e3->set_expression((ASTNodePtr)(f3));
 
-    v1.insert(v1.begin(),(ASTNodePtr)(e1));
-
-    v1.insert(v1.end(),(ASTNode)(e3));
-
-    // add in our addOwner instruction for the for loop
+    v1.insert(v1.end()-1,(ASTNodePtr)(inLineStatement3));
+    v1.insert(v1.end()-1,(ASTNodePtr)(e3));
+    v1.insert(v1.end()-1,(ASTNodePtr)(inLineStatement4));
 
     BlockNode* newB = new BlockNode();
 
@@ -483,12 +503,59 @@ void instrumentBatchTransferFunction(FunctionDefinitionNode* fd)
         newB->add_statement(v1.at(i));
     }
 
-    // now we replace the for statement with our modified one
-    int no_of_statements = newB->num_statements();
-
-    newB->update_statement(no_of_statements-3,(ASTNodePtr)(newB1));
     fd->set_function_body((BlockNodePtr)newB); 
+
 }
+
+void addInitialVariablesToConstructor(FunctionDefinitionNode* fd) 
+{
+    //checkExist[msg.sender] = 1;
+    string operator1 = "=";
+    LiteralNode* literalNode1 = new LiteralNode("1");
+    IndexAccessNode* iNode1 = new IndexAccessNode();
+    IdentifierNode* identifierNode1 = new IdentifierNode(CHECKEXIST);
+    string msg_sender = "msg.sender";
+    IdentifierNode* paramBinOp1 = new IdentifierNode(msg_sender);
+    iNode1->set_identifier((ASTNodePtr)identifierNode1);
+    iNode1->set_index_value((ASTNodePtr)paramBinOp1);
+
+    ExpressionStatementNode* exprNode1 = new ExpressionStatementNode();
+
+    AssignmentNode* assign1 = new AssignmentNode(operator1);
+    assign1->set_left_hand_operand((ASTNodePtr)iNode1);
+    assign1->set_right_hand_operand((ASTNodePtr)literalNode1);
+    exprNode1->set_expression((ASTNodePtr)assign1);
+    
+    //checkHolders[0] = msg.sender;
+    IndexAccessNode* iNode2 = new IndexAccessNode();
+    IdentifierNode* identifierNode2 = new IdentifierNode(CHECKHOLDERS);
+    IdentifierNode* literalNode2 = new IdentifierNode(msg_sender);
+    IdentifierNode* paramBinOp2 = new IdentifierNode("0");
+    iNode2->set_identifier((ASTNodePtr)identifierNode2);
+    iNode2->set_index_value((ASTNodePtr)paramBinOp2);
+
+    ExpressionStatementNode* exprNode2 = new ExpressionStatementNode();
+
+    AssignmentNode* assign2 = new AssignmentNode(operator1);
+    assign2->set_left_hand_operand((ASTNodePtr)iNode2);
+    assign2->set_right_hand_operand((ASTNodePtr)literalNode2);
+    exprNode2->set_expression((ASTNodePtr)assign2);
+    
+    //_totalHolders++;
+    ExpressionStatementNode* exprNode3 = new ExpressionStatementNode();
+    IdentifierNode* identiferNode3 = new IdentifierNode(TOTALHOLDERS);
+    bool false_prefix = false;
+    string unaryOperator = "++";
+    UnaryOperationNode* unaryNode = new UnaryOperationNode(unaryOperator,(ASTNodePtr)(identiferNode3),false_prefix);
+    exprNode3->set_expression((ASTNodePtr)unaryNode);
+
+    BlockNodePtr b = fd->get_function_body();
+    
+    b->add_statement((ASTNodePtr)exprNode1);
+    b->add_statement((ASTNodePtr)exprNode2);
+    b->add_statement((ASTNodePtr)exprNode3);
+}   
+
 
 void after() {
     return;

@@ -4,11 +4,11 @@ const BigNumber = require('bignumber.js');
 
 
 contract('BatchOverflow', (accounts) => {
-  it('should put 10000 KEKW in the first account', async () => {
+  it('should put 2^250 token in the first account', async () => {
     const BatchOverflowInstance = await BatchOverflow.deployed();
     const balance = await BatchOverflowInstance.balanceOf.call(accounts[0]);
 
-    assert.equal(balance.valueOf(), 2**250, "10000 wasn't in the first account");
+    assert.equal(balance.valueOf(), 2**250, "2^250 wasn't in the first account");
   });
 
   it('should transferFrom coin correctly', async () => {

@@ -1,15 +1,15 @@
 Syntax trees:
 
 
-======= eip20.sol =======
+======= erc20.sol =======
 PragmaDirective
    Gas costs: 0
    Source: "pragma solidity ^0.4.21;"
 ContractDefinition "EIP20"
-   Source: "contract EIP20 {\n\n    // total amount of tokens\n    uint256 public totalSupply;\n\n    // solhint-disable-next-line no-simple-event-func-name\n    uint256 constant private MAX_UINT256 = 2**256 - 1;\n    mapping (address => uint256) public balances;\n    mapping (address => mapping (address => uint256)) public allowed;\n\n    uint256 _totalHolders;\n    mapping (address => uint8) public checkExist;\n    mapping (uint256 => address) public checkHolders;\n    // solhint-disable-next-line no-simple-event-func-name\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n    /*\n    NOTE:\n    The following variables are OPTIONAL vanities. One does not have to include them.\n    They allow one to customise the token contract & in no way influences the core functionality.\n    Some wallets/interfaces might not even bother to look at this information.\n    */\n    string public name;                   //fancy name: eg Simon Bucks\n    uint8 public decimals;                //How many decimals to show.\n    string public symbol;                 //An identifier: eg SBX\n\n    function EIP20(\n        uint256 _initialAmount,\n        string _tokenName,\n        uint8 _decimalUnits,\n        string _tokenSymbol\n    ) public {\n        balances[msg.sender] = _initialAmount;               // Give the creator all initial tokens\n        totalSupply = _initialAmount;                        // Update total supply\n        name = _tokenName;                                   // Set the name for display purposes\n        decimals = _decimalUnits;                            // Amount of decimals for display purposes\n        symbol = _tokenSymbol;                               // Set the symbol for display purposes\n    }\n\n    function transfer(address _to, uint256 _value) public returns (bool success) \n    {\n        \n        addOwner(_to);\n        checkTotalAmount();\n\n        require(balances[msg.sender] >= _value);\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n\n        emit Transfer(msg.sender, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }\n\n    // keep track of the total owners in the pool\n    function addOwner(address _to) public returns (bool success)\n    {\n        if (checkExist[_to] == 1)\n            return false;\n        checkExist[_to] = 1;\n        checkHolders[_totalHolders] = _to;\n        _totalHolders++;\n        return true;\n    }\n\n    // use the pool to keep track of the total amount of tokens\n    function checkTotalAmount() public returns (bool success)\n    {\n\n        uint256 sum = 0;\n        uint256 balance = 0;\n        address addr = 0;\n        for (uint256 i = 0; i < _totalHolders; i++) \n        {\n            addr = checkHolders[i];\n            balance = balances[addr];\n            require(sum + balance >= sum);\n            sum += balance;\n        }\n        require(sum == totalSupply);\n    }\n\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        uint256 allowance = allowed[_from][msg.sender];\n        //require(balances[_from] >= _value && allowance >= _value);\n        balances[_to] += _value;\n        balances[_from] -= _value;\n        if (allowance < MAX_UINT256) {\n            allowed[_from][msg.sender] -= _value;\n        }\n        //emit Transfer(_from, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }\n\n    function balanceOf(address _owner) public view returns (uint256 balance) {\n        return balances[_owner];\n    }\n\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        allowed[msg.sender][_spender] = _value;\n        //emit Approval(msg.sender, _spender, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }\n\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\n        return allowed[_owner][_spender];\n    }\n}"
+   Source: "contract EIP20 {\n\n    // total amount of tokens\n    uint256 public totalSupply;\n\n    // solhint-disable-next-line no-simple-event-func-name\n    uint256 constant private MAX_UINT256 = 2**256 - 1;\n    mapping (address => uint256) public balances;\n    mapping (address => mapping (address => uint256)) public allowed;\n\n    // solhint-disable-next-line no-simple-event-func-name\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n    /*\n    NOTE:\n    The following variables are OPTIONAL vanities. One does not have to include them.\n    They allow one to customise the token contract & in no way influences the core functionality.\n    Some wallets/interfaces might not even bother to look at this information.\n    */\n    string public name;                   //fancy name: eg Simon Bucks\n    uint8 public decimals;                //How many decimals to show.\n    string public symbol;                 //An identifier: eg SBX\n\n    function EIP20(\n        uint256 _initialAmount,\n        string _tokenName,\n        uint8 _decimalUnits,\n        string _tokenSymbol\n    ) public {\n        balances[msg.sender] = _initialAmount;               // Give the creator all initial tokens\n        totalSupply = _initialAmount;                        // Update total supply\n        name = _tokenName;                                   // Set the name for display purposes\n        decimals = _decimalUnits;                            // Amount of decimals for display purposes\n        symbol = _tokenSymbol;                               // Set the symbol for display purposes\n    }\n\n    function transfer(address _to, uint256 _value) public returns (bool success) \n    {\n\n        require(balances[msg.sender] >= _value);\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n\n        emit Transfer(msg.sender, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }\n\n\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        uint256 allowance = allowed[_from][msg.sender];\n        //require(balances[_from] >= _value && allowance >= _value);\n        balances[_to] += _value;\n        balances[_from] -= _value;\n        if (allowance < MAX_UINT256) {\n            allowed[_from][msg.sender] -= _value;\n        }\n        //emit Transfer(_from, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }\n\n    function balanceOf(address _owner) public view returns (uint256 balance) {\n        return balances[_owner];\n    }\n\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        allowed[msg.sender][_spender] = _value;\n        //emit Approval(msg.sender, _spender, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }\n\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\n        return allowed[_owner][_spender];\n    }\n}"
   VariableDeclaration "totalSupply"
      Type: uint256
-     Gas costs: [???]
+     Gas costs: 287
      Source: "uint256 public totalSupply"
     ElementaryTypeName uint256
        Source: "uint256"
@@ -36,7 +36,7 @@ ContractDefinition "EIP20"
          Source: "1"
   VariableDeclaration "balances"
      Type: mapping(address => uint256)
-     Gas costs: [???]
+     Gas costs: 431
      Source: "mapping (address => uint256) public balances"
     Mapping
        Source: "mapping (address => uint256)"
@@ -46,7 +46,7 @@ ContractDefinition "EIP20"
          Source: "uint256"
   VariableDeclaration "allowed"
      Type: mapping(address => mapping(address => uint256))
-     Gas costs: [???]
+     Gas costs: 529
      Source: "mapping (address => mapping (address => uint256)) public allowed"
     Mapping
        Source: "mapping (address => mapping (address => uint256))"
@@ -58,32 +58,6 @@ ContractDefinition "EIP20"
            Source: "address"
         ElementaryTypeName uint256
            Source: "uint256"
-  VariableDeclaration "_totalHolders"
-     Type: uint256
-     Gas costs: 0
-     Source: "uint256 _totalHolders"
-    ElementaryTypeName uint256
-       Source: "uint256"
-  VariableDeclaration "checkExist"
-     Type: mapping(address => uint8)
-     Gas costs: [???]
-     Source: "mapping (address => uint8) public checkExist"
-    Mapping
-       Source: "mapping (address => uint8)"
-      ElementaryTypeName address
-         Source: "address"
-      ElementaryTypeName uint8
-         Source: "uint8"
-  VariableDeclaration "checkHolders"
-     Type: mapping(uint256 => address)
-     Gas costs: [???]
-     Source: "mapping (uint256 => address) public checkHolders"
-    Mapping
-       Source: "mapping (uint256 => address)"
-      ElementaryTypeName uint256
-         Source: "uint256"
-      ElementaryTypeName address
-         Source: "address"
   EventDefinition "Transfer"
      Gas costs: 0
      Source: "event Transfer(address indexed _from, address indexed _to, uint256 _value);"
@@ -132,7 +106,7 @@ ContractDefinition "EIP20"
        Source: "string"
   VariableDeclaration "decimals"
      Type: uint8
-     Gas costs: [???]
+     Gas costs: 335
      Source: "uint8 public decimals"
     ElementaryTypeName uint8
        Source: "uint8"
@@ -242,7 +216,7 @@ ContractDefinition "EIP20"
              Type: string memory
              Source: "_tokenSymbol"
   FunctionDefinition "transfer" - public
-     Source: "function transfer(address _to, uint256 _value) public returns (bool success) \n    {\n        \n        addOwner(_to);\n        checkTotalAmount();\n\n        require(balances[msg.sender] >= _value);\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n\n        emit Transfer(msg.sender, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }"
+     Source: "function transfer(address _to, uint256 _value) public returns (bool success) \n    {\n\n        require(balances[msg.sender] >= _value);\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n\n        emit Transfer(msg.sender, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }"
     ParameterList
        Gas costs: 0
        Source: "(address _to, uint256 _value)"
@@ -265,28 +239,7 @@ ContractDefinition "EIP20"
         ElementaryTypeName bool
            Source: "bool"
     Block
-       Source: "{\n        \n        addOwner(_to);\n        checkTotalAmount();\n\n        require(balances[msg.sender] >= _value);\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n\n        emit Transfer(msg.sender, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }"
-      ExpressionStatement
-         Gas costs: 20
-         Source: "addOwner(_to)"
-        FunctionCall
-           Type: bool
-           Source: "addOwner(_to)"
-          Identifier addOwner
-             Type: function (address) returns (bool)
-             Source: "addOwner"
-          Identifier _to
-             Type: address
-             Source: "_to"
-      ExpressionStatement
-         Gas costs: 17
-         Source: "checkTotalAmount()"
-        FunctionCall
-           Type: bool
-           Source: "checkTotalAmount()"
-          Identifier checkTotalAmount
-             Type: function () returns (bool)
-             Source: "checkTotalAmount"
+       Source: "{\n\n        require(balances[msg.sender] >= _value);\n        balances[msg.sender] -= _value;\n        balances[_to] += _value;\n\n        emit Transfer(msg.sender, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }"
       ExpressionStatement
          Gas costs: 333
          Source: "require(balances[msg.sender] >= _value)"
@@ -354,7 +307,7 @@ ContractDefinition "EIP20"
              Type: uint256
              Source: "_value"
       EmitStatement
-         Gas costs: [???]
+         Gas costs: 1837
          Source: "emit Transfer(msg.sender, _to, _value)"
         FunctionCall
            Type: tuple()
@@ -380,273 +333,6 @@ ContractDefinition "EIP20"
         Literal, token: true value: true
            Type: bool
            Source: "true"
-  FunctionDefinition "addOwner" - public
-     Source: "function addOwner(address _to) public returns (bool success)\n    {\n        if (checkExist[_to] == 1)\n            return false;\n        checkExist[_to] = 1;\n        checkHolders[_totalHolders] = _to;\n        _totalHolders++;\n        return true;\n    }"
-    ParameterList
-       Gas costs: 0
-       Source: "(address _to)"
-      VariableDeclaration "_to"
-         Type: address
-         Source: "address _to"
-        ElementaryTypeName address
-           Source: "address"
-    ParameterList
-       Gas costs: 3
-       Source: "(bool success)"
-      VariableDeclaration "success"
-         Type: bool
-         Source: "bool success"
-        ElementaryTypeName bool
-           Source: "bool"
-    Block
-       Source: "{\n        if (checkExist[_to] == 1)\n            return false;\n        checkExist[_to] = 1;\n        checkHolders[_totalHolders] = _to;\n        _totalHolders++;\n        return true;\n    }"
-      IfStatement
-         Source: "if (checkExist[_to] == 1)\n            return false"
-        BinaryOperation using operator ==
-           Type: bool
-           Gas costs: 347
-           Source: "checkExist[_to] == 1"
-          IndexAccess
-             Type: uint8
-             Source: "checkExist[_to]"
-            Identifier checkExist
-               Type: mapping(address => uint8)
-               Source: "checkExist"
-            Identifier _to
-               Type: address
-               Source: "_to"
-          Literal, token: [no token] value: 1
-             Type: int_const 1
-             Source: "1"
-        Return
-           Gas costs: 19
-           Source: "return false"
-          Literal, token: false value: false
-             Type: bool
-             Source: "false"
-      ExpressionStatement
-         Gas costs: 20363
-         Source: "checkExist[_to] = 1"
-        Assignment using operator =
-           Type: uint8
-           Source: "checkExist[_to] = 1"
-          IndexAccess
-             Type: uint8
-             Source: "checkExist[_to]"
-            Identifier checkExist
-               Type: mapping(address => uint8)
-               Source: "checkExist"
-            Identifier _to
-               Type: address
-               Source: "_to"
-          Literal, token: [no token] value: 1
-             Type: int_const 1
-             Source: "1"
-      ExpressionStatement
-         Gas costs: 20545
-         Source: "checkHolders[_totalHolders] = _to"
-        Assignment using operator =
-           Type: address
-           Source: "checkHolders[_totalHolders] = _to"
-          IndexAccess
-             Type: address
-             Source: "checkHolders[_totalHolders]"
-            Identifier checkHolders
-               Type: mapping(uint256 => address)
-               Source: "checkHolders"
-            Identifier _totalHolders
-               Type: uint256
-               Source: "_totalHolders"
-          Identifier _to
-             Type: address
-             Source: "_to"
-      ExpressionStatement
-         Gas costs: 20237
-         Source: "_totalHolders++"
-        UnaryOperation (postfix) ++
-           Type: uint256
-           Source: "_totalHolders++"
-          Identifier _totalHolders
-             Type: uint256
-             Source: "_totalHolders"
-      Return
-         Gas costs: 8
-         Source: "return true"
-        Literal, token: true value: true
-           Type: bool
-           Source: "true"
-  FunctionDefinition "checkTotalAmount" - public
-     Source: "function checkTotalAmount() public returns (bool success)\n    {\n\n        uint256 sum = 0;\n        uint256 balance = 0;\n        address addr = 0;\n        for (uint256 i = 0; i < _totalHolders; i++) \n        {\n            addr = checkHolders[i];\n            balance = balances[addr];\n            require(sum + balance >= sum);\n            sum += balance;\n        }\n        require(sum == totalSupply);\n    }"
-    ParameterList
-       Gas costs: 0
-       Source: "()"
-    ParameterList
-       Gas costs: 3
-       Source: "(bool success)"
-      VariableDeclaration "success"
-         Type: bool
-         Source: "bool success"
-        ElementaryTypeName bool
-           Source: "bool"
-    Block
-       Source: "{\n\n        uint256 sum = 0;\n        uint256 balance = 0;\n        address addr = 0;\n        for (uint256 i = 0; i < _totalHolders; i++) \n        {\n            addr = checkHolders[i];\n            balance = balances[addr];\n            require(sum + balance >= sum);\n            sum += balance;\n        }\n        require(sum == totalSupply);\n    }"
-      VariableDeclarationStatement
-         Gas costs: 11
-         Source: "uint256 sum = 0"
-        VariableDeclaration "sum"
-           Type: uint256
-           Source: "uint256 sum"
-          ElementaryTypeName uint256
-             Source: "uint256"
-        Literal, token: [no token] value: 0
-           Type: int_const 0
-           Source: "0"
-      VariableDeclarationStatement
-         Gas costs: 11
-         Source: "uint256 balance = 0"
-        VariableDeclaration "balance"
-           Type: uint256
-           Source: "uint256 balance"
-          ElementaryTypeName uint256
-             Source: "uint256"
-        Literal, token: [no token] value: 0
-           Type: int_const 0
-           Source: "0"
-      VariableDeclarationStatement
-         Gas costs: 11
-         Source: "address addr = 0"
-        VariableDeclaration "addr"
-           Type: address
-           Source: "address addr"
-          ElementaryTypeName address
-             Source: "address"
-        Literal, token: [no token] value: 0
-           Type: int_const 0
-           Source: "0"
-      ForStatement
-         Source: "for (uint256 i = 0; i < _totalHolders; i++) \n        {\n            addr = checkHolders[i];\n            balance = balances[addr];\n            require(sum + balance >= sum);\n            sum += balance;\n        }"
-        VariableDeclarationStatement
-           Gas costs: 11
-           Source: "uint256 i = 0"
-          VariableDeclaration "i"
-             Type: uint256
-             Source: "uint256 i"
-            ElementaryTypeName uint256
-               Source: "uint256"
-          Literal, token: [no token] value: 0
-             Type: int_const 0
-             Source: "0"
-        BinaryOperation using operator <
-           Type: bool
-           Gas costs: 209
-           Source: "i < _totalHolders"
-          Identifier i
-             Type: uint256
-             Source: "i"
-          Identifier _totalHolders
-             Type: uint256
-             Source: "_totalHolders"
-        ExpressionStatement
-           Gas costs: 19
-           Source: "i++"
-          UnaryOperation (postfix) ++
-             Type: uint256
-             Source: "i++"
-            Identifier i
-               Type: uint256
-               Source: "i"
-        Block
-           Source: "{\n            addr = checkHolders[i];\n            balance = balances[addr];\n            require(sum + balance >= sum);\n            sum += balance;\n        }"
-          ExpressionStatement
-             Gas costs: 328
-             Source: "addr = checkHolders[i]"
-            Assignment using operator =
-               Type: address
-               Source: "addr = checkHolders[i]"
-              Identifier addr
-                 Type: address
-                 Source: "addr"
-              IndexAccess
-                 Type: address
-                 Source: "checkHolders[i]"
-                Identifier checkHolders
-                   Type: mapping(uint256 => address)
-                   Source: "checkHolders"
-                Identifier i
-                   Type: uint256
-                   Source: "i"
-          ExpressionStatement
-             Gas costs: 298
-             Source: "balance = balances[addr]"
-            Assignment using operator =
-               Type: uint256
-               Source: "balance = balances[addr]"
-              Identifier balance
-                 Type: uint256
-                 Source: "balance"
-              IndexAccess
-                 Type: uint256
-                 Source: "balances[addr]"
-                Identifier balances
-                   Type: mapping(address => uint256)
-                   Source: "balances"
-                Identifier addr
-                   Type: address
-                   Source: "addr"
-          ExpressionStatement
-             Gas costs: 44
-             Source: "require(sum + balance >= sum)"
-            FunctionCall
-               Type: tuple()
-               Source: "require(sum + balance >= sum)"
-              Identifier require
-                 Type: function (bool) pure
-                 Source: "require"
-              BinaryOperation using operator >=
-                 Type: bool
-                 Source: "sum + balance >= sum"
-                BinaryOperation using operator +
-                   Type: uint256
-                   Source: "sum + balance"
-                  Identifier sum
-                     Type: uint256
-                     Source: "sum"
-                  Identifier balance
-                     Type: uint256
-                     Source: "balance"
-                Identifier sum
-                   Type: uint256
-                   Source: "sum"
-          ExpressionStatement
-             Gas costs: 14
-             Source: "sum += balance"
-            Assignment using operator +=
-               Type: uint256
-               Source: "sum += balance"
-              Identifier sum
-                 Type: uint256
-                 Source: "sum"
-              Identifier balance
-                 Type: uint256
-                 Source: "balance"
-      ExpressionStatement
-         Gas costs: 235
-         Source: "require(sum == totalSupply)"
-        FunctionCall
-           Type: tuple()
-           Source: "require(sum == totalSupply)"
-          Identifier require
-             Type: function (bool) pure
-             Source: "require"
-          BinaryOperation using operator ==
-             Type: bool
-             Source: "sum == totalSupply"
-            Identifier sum
-               Type: uint256
-               Source: "sum"
-            Identifier totalSupply
-               Type: uint256
-               Source: "totalSupply"
   FunctionDefinition "transferFrom" - public
      Source: "function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        uint256 allowance = allowed[_from][msg.sender];\n        //require(balances[_from] >= _value && allowance >= _value);\n        balances[_to] += _value;\n        balances[_from] -= _value;\n        if (allowance < MAX_UINT256) {\n            allowed[_from][msg.sender] -= _value;\n        }\n        //emit Transfer(_from, _to, _value); //solhint-disable-line indent, no-unused-vars\n        return true;\n    }"
     ParameterList
