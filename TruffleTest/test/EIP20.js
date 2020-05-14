@@ -1,7 +1,7 @@
 const EIP20 = artifacts.require("EIP20");
 
 contract('EIP20', (accounts) => {
-  it('should put 10000 KEKW in the first account', async () => {
+  it('should put 10000 tokens in the first account', async () => {
     const EIP20Instance = await EIP20.deployed();
     const balance = await EIP20Instance.balanceOf.call(accounts[0]);
 
