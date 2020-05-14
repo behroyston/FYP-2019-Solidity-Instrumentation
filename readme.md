@@ -1,11 +1,12 @@
-These are the test scripts used throughout the FYP after experimentation with TruffleSuite and Solidity Instrumentation Framework(SIF)
+These are the test scripts used throughout the FYP after experimentation with TruffleSuite and Solidity Instrumentation Framework(SIF).
 
 The SIF which I utilise is credited to https://github.com/chao-peng/SIF
 
 I prepared three separate ASTVisitor.cpp and ASTVisitor.hpp codes to test.
 
 ERC20 - contains the script to instrument inline assembly code - gasstart and gasstop as well as the required checking UDF.
-UET and BecToken - contains the script required to instrument and expose the vulnerabilities in both of these code
+UET and BecToken - contains the script required to instrument and expose the vulnerabilities in both of these code.
+
 To Run the SIF instrumentation:
 1) Replace the ASTVisitor.hpp and the ASTVisitor.cpp code
 2) Run SIF -> sif -a contract_name.ast -j contract_name.json -o generated_contract.s
